@@ -7,7 +7,7 @@ def main():
     pygame.init()
 
     # display setting information
-    display_w = 645
+    display_w = 1200
     display_h = 900
     length_num = 8
     if display_h < display_w:
