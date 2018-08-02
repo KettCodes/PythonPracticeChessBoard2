@@ -1,0 +1,94 @@
+import pygame
+import ChessCreateBoard
+
+
+def main():
+    # start pygame modules that need to be started
+    pygame.init()
+
+    # display setting information
+    display_w = 645
+    display_h = 900
+    length_num = 8
+    if display_h < display_w:
+        sqr_l = display_h / length_num
+        sqr_h_buffer = 0
+        sqr_w_buffer = (display_w - display_h) / 2
+    else:
+        sqr_l = display_w / length_num
+        sqr_h_buffer = (display_h - display_w) / 2
+        sqr_w_buffer = 0
+
+    # store RGB colour codes for pygame in tuples
+    RGB_black = (0, 0, 0)
+    RGB_white = (255, 255, 255)
+    RGB_red = (255, 0, 0)
+    RGB_green = (0, 255, 0)
+    RGB_blue = (0, 0, 255)
+
+    # create the window with caption and a game clock
+    chessboard_window = pygame.display.set_mode((display_w, display_h))
+    pygame.display.set_caption('Python 2-Player Chess')
+    clock = pygame.time.Clock()
+
+    # create the chessboard including pieces and ready first turn
+    chessboard = ChessCreateBoard.create_board()
+    white_turn = True
+    active_piece = None
+
+    # start the game loop
+    continue_game = True
+    while continue_game:
+
+        # pygame event loop stacks events in a frame
+        for event in pygame.event.get():
+            # activates if user closes game window
+            if event.type == pygame.QUIT:
+                continue_game = False
+            # activates on click
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                click_pos = pygame.mouse.get_pos()
+                click_x = int((click_pos[0]-sqr_w_buffer)/sqr_l)+1
+                click_y = int((click_pos[1]-sqr_h_buffer)/sqr_l)+1
+                if active_piece and active_piece.can_move(click_x, click_y):
+                        chessboard[active_piece.col][active_piece.row] = None
+                        chessboard[click_x][click_y] = active_piece
+                        active_piece.moved = True
+                        active_piece = None
+                else:
+                    active_piece = chessboard[click_x][click_y]
+
+        # starting with the background the chessboard is drawn along with the active piece paths
+        chessboard_window.fill(RGB_black)
+        for i in range(1, 9):
+            for j in range(1, 9):
+                if (i+j)%2 == 0:
+                    pygame.draw.rect(chessboard_window,
+                                     RGB_white,
+                                     (((i-1)*sqr_l)+sqr_w_buffer+1,((j-1)*sqr_l)+sqr_h_buffer+1, sqr_l-2, sqr_l-2),
+                                     0)
+                if chessboard[i][j]:
+                    chessboard[i][j].display(chessboard_window, sqr_l,
+                                             sqr_w_buffer, sqr_h_buffer)
+        if active_piece:
+            active_piece.show_moves(chessboard_window, sqr_l,
+                                    sqr_w_buffer, sqr_h_buffer,
+                                    chessboard, white_turn)
+
+        # after drawing the board it is updating to the screen and frames are updated
+        pygame.display.update()
+        clock.tick(100)
+
+    pygame.quit()
+    quit()
+
+
+if __name__ == '__main__':
+    main()
+
+# current_key = pygame.key.get_pressed()
+
+# if current_key[pygame.K_LEFT]:
+#    hero.col -= x_change
+# if current_key[pygame.K_RIGHT]:
+#    hero.col += x_change
