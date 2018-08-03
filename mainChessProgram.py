@@ -36,7 +36,8 @@ def main():
     chessboard = ChessCreateBoard.create_board()
     white_turn = True
     active_piece = None
-
+    drawing = GameFunctions.Dimensions(screen=chessboard_window, sqr_l=sqr_l,
+                                       w_buffer=sqr_w_buffer, h_buffer=sqr_h_buffer)
 
     # start the game loop
     continue_game = True
@@ -52,10 +53,12 @@ def main():
                 click_pos = pygame.mouse.get_pos()
                 click_x = int((click_pos[0]-sqr_w_buffer)/sqr_l)+1
                 click_y = int((click_pos[1]-sqr_h_buffer)/sqr_l)+1
-                if active_piece and active_piece.can_move(click_x, click_y):
-                        chessboard[active_piece.col][active_piece.row] = None
+                if active_piece and active_piece.can_move(chessboard, click_x, click_y):
                         chessboard[click_x][click_y] = active_piece
-                        active_piece.moved = True
+                        chessboard[active_piece.col][active_piece.row] = None
+                        active_piece.col = click_x
+                        active_piece.row = click_y
+                        active_piece.has_moved = True
                         active_piece = None
                 else:
                     active_piece = chessboard[click_x][click_y]
@@ -75,7 +78,7 @@ def main():
                     chessboard[i][j].display(chessboard_window, sqr_l,
                                              sqr_w_buffer, sqr_h_buffer)
         if active_piece:
-            pass
+            active_piece.show_moves(chessboard, drawing)
 
         # after drawing the board it is updating to the screen and frames are updated
         pygame.display.update()

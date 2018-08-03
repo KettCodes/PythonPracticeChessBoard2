@@ -1,3 +1,8 @@
+import collections
+
+Dimensions = collections.namedtuple('Dimensions', 'screen, sqr_l, w_buffer, h_buffer')
+
+
 def calc_x(col, sqr_l, sqr_w_buffer):
     return ((col - 1) * sqr_l) + sqr_w_buffer
 
