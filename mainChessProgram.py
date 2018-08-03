@@ -51,17 +51,23 @@ def main():
             # activates on click
             if event.type == pygame.MOUSEBUTTONDOWN:
                 click_pos = pygame.mouse.get_pos()
-                click_x = int((click_pos[0]-sqr_w_buffer)/sqr_l)+1
-                click_y = int((click_pos[1]-sqr_h_buffer)/sqr_l)+1
-                if active_piece and active_piece.can_move(chessboard, click_x, click_y):
+                if (sqr_w_buffer < click_pos[0] < display_w - sqr_w_buffer)\
+                        and(sqr_h_buffer < click_pos[1] < display_h - sqr_h_buffer):
+                    click_x = int((click_pos[0]-sqr_w_buffer)/sqr_l)+1
+                    click_y = int((click_pos[1]-sqr_h_buffer)/sqr_l)+1
+                    if active_piece and active_piece.can_move(chessboard, click_x, click_y)\
+                            and ((active_piece.owner == 1) != white_turn):
                         chessboard[click_x][click_y] = active_piece
                         chessboard[active_piece.col][active_piece.row] = None
                         active_piece.col = click_x
                         active_piece.row = click_y
                         active_piece.has_moved = True
                         active_piece = None
+                        white_turn = not white_turn
+                    else:
+                        active_piece = chessboard[click_x][click_y]
                 else:
-                    active_piece = chessboard[click_x][click_y]
+                    active_piece = None
 
         # starting with the background the chessboard is drawn along with the active piece paths
         chessboard_window.fill(rgb_black)
