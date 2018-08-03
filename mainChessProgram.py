@@ -1,5 +1,6 @@
 import pygame
 import ChessCreateBoard
+import GameFunctions
 
 
 def main():
@@ -20,11 +21,11 @@ def main():
         sqr_w_buffer = 0
 
     # store RGB colour codes for pygame in tuples
-    RGB_black = (0, 0, 0)
-    RGB_white = (255, 255, 255)
-    RGB_red = (255, 0, 0)
-    RGB_green = (0, 255, 0)
-    RGB_blue = (0, 0, 255)
+    rgb_black = (0, 0, 0)
+    rgb_white = (255, 255, 255)
+    rgb_red = (255, 0, 0)
+    rgb_green = (0, 255, 0)
+    rgb_blue = (0, 0, 255)
 
     # create the window with caption and a game clock
     chessboard_window = pygame.display.set_mode((display_w, display_h))
@@ -35,6 +36,7 @@ def main():
     chessboard = ChessCreateBoard.create_board()
     white_turn = True
     active_piece = None
+
 
     # start the game loop
     continue_game = True
@@ -59,21 +61,21 @@ def main():
                     active_piece = chessboard[click_x][click_y]
 
         # starting with the background the chessboard is drawn along with the active piece paths
-        chessboard_window.fill(RGB_black)
+        chessboard_window.fill(rgb_black)
         for i in range(1, 9):
             for j in range(1, 9):
                 if (i+j)%2 == 0:
                     pygame.draw.rect(chessboard_window,
-                                     RGB_white,
-                                     (((i-1)*sqr_l)+sqr_w_buffer+1,((j-1)*sqr_l)+sqr_h_buffer+1, sqr_l-2, sqr_l-2),
+                                     rgb_white,
+                                     (GameFunctions.calc_x(i, sqr_l, sqr_w_buffer),
+                                      GameFunctions.calc_y(j, sqr_l, sqr_h_buffer),
+                                      sqr_l, sqr_l),
                                      0)
                 if chessboard[i][j]:
                     chessboard[i][j].display(chessboard_window, sqr_l,
                                              sqr_w_buffer, sqr_h_buffer)
         if active_piece:
-            active_piece.show_moves(chessboard_window, sqr_l,
-                                    sqr_w_buffer, sqr_h_buffer,
-                                    chessboard, white_turn)
+            pass
 
         # after drawing the board it is updating to the screen and frames are updated
         pygame.display.update()

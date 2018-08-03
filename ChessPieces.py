@@ -1,31 +1,25 @@
 import os
 import pygame
+import GameFunctions
 
 
 class ChessPiece:
     def __init__(self, owner, row, col):
-        self.moves = 0
+        self.has_moved = 0
         self.owner = owner
         self.row = row
         self.col = col
 
     def display(self, game_display, sqr_l, sqr_w_buffer, sqr_h_buffer):
-        game_display.blit(self.img, (self.__calc_x(sqr_l, sqr_w_buffer), self.__calc_y(sqr_l, sqr_h_buffer)))
+        game_display.blit(self.img,
+                          (GameFunctions.calc_x(self.col, sqr_l, sqr_w_buffer)+ ((sqr_l - 64) / 2),
+                           GameFunctions.calc_y(self.row, sqr_l, sqr_h_buffer)+ ((sqr_l - 64) / 2)))
 
-    def __calc_x(self, sqr_l, sqr_w_buffer):
-        x_start = ((self.col - 1) * sqr_l) + ((sqr_l - 64) / 2) + sqr_w_buffer
-        return x_start
-
-    def __calc_y(self, sqr_l, sqr_h_buffer):
-        y_start = ((self.row - 1) * sqr_l) + ((sqr_l - 64) / 2) + sqr_h_buffer
-        return y_start
-
-    def show_moves(self, chessboard_window, sqr_l,
-                   sqr_w_buffer, sqr_h_buffer,
-                   chessboard, white_turn):
+    def show_moves(self):
         pass
 
-    def can_move(self, x, y):
+    # for these functions 0 = no move, 1 = empty space, 2 = capture
+    def can_move(self):
         return False
 
 
@@ -37,14 +31,6 @@ class Pawn(ChessPiece):
             self.img = pygame.image.load(os.path.abspath(os.path.join('.', 'sprites\Pawn2.png')))
         super().__init__(owner, row, col)
 
-    def show_moves(self, chessboard_window, sqr_l,
-                   sqr_w_buffer, sqr_h_buffer,
-                   chessboard, white_turn):
-        pass
-
-    def can_move(self, x, y):
-        return False
-
 
 class Knight(ChessPiece):
     def __init__(self, owner, row, col):
@@ -54,9 +40,7 @@ class Knight(ChessPiece):
             self.img = pygame.image.load(os.path.abspath(os.path.join('.', 'sprites\Knight2.png')))
         super().__init__(owner, row, col)
 
-    def show_moves(self, chessboard_window, sqr_l,
-                   sqr_w_buffer, sqr_h_buffer,
-                   chessboard, white_turn):
+    def show_moves(self):
         pass
 
 
@@ -68,9 +52,7 @@ class Bishop(ChessPiece):
             self.img = pygame.image.load(os.path.abspath(os.path.join('.', 'sprites\Bishop2.png')))
         super().__init__(owner, row, col)
 
-    def show_moves(self, chessboard_window, sqr_l,
-                   sqr_w_buffer, sqr_h_buffer,
-                   chessboard, white_turn):
+    def show_moves(self):
         pass
 
 
@@ -82,9 +64,7 @@ class Rook(ChessPiece):
             self.img = pygame.image.load(os.path.abspath(os.path.join('.', 'sprites\Rook2.png')))
         super().__init__(owner, row, col)
 
-    def show_moves(self, chessboard_window, sqr_l,
-                   sqr_w_buffer, sqr_h_buffer,
-                   chessboard, white_turn):
+    def show_moves(self):
         pass
 
 
@@ -96,9 +76,7 @@ class Queen(ChessPiece):
             self.img = pygame.image.load(os.path.abspath(os.path.join('.', 'sprites\Queen2.png')))
         super().__init__(owner, row, col)
 
-    def show_moves(self, chessboard_window, sqr_l,
-                   sqr_w_buffer, sqr_h_buffer,
-                   chessboard, white_turn):
+    def show_moves(self):
         pass
 
 
@@ -111,7 +89,5 @@ class King(ChessPiece):
             self.img = pygame.image.load(os.path.abspath(os.path.join('.', 'sprites\King2.png')))
         super().__init__(owner, row, col)
 
-    def show_moves(self, chessboard_window, sqr_l,
-                   sqr_w_buffer, sqr_h_buffer,
-                   chessboard, white_turn):
+    def show_moves(self):
         pass
