@@ -24,3 +24,4 @@ def create_board():
             chessboard[i][1] = ChessPieces.Queen(1, 1, i)
 
     return chessboard
+

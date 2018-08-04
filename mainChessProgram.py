@@ -36,6 +36,8 @@ def main():
     chessboard = ChessCreateBoard.create_board()
     white_turn = True
     active_piece = None
+    king = [chessboard[5][8], chessboard[5][1]]
+    player_in_check = [False, False]
     drawing = GameFunctions.Dimensions(screen=chessboard_window, sqr_l=sqr_l,
                                        w_buffer=sqr_w_buffer, h_buffer=sqr_h_buffer)
 
@@ -55,7 +57,7 @@ def main():
                         and(sqr_h_buffer < click_pos[1] < display_h - sqr_h_buffer):
                     click_x = int((click_pos[0]-sqr_w_buffer)/sqr_l)+1
                     click_y = int((click_pos[1]-sqr_h_buffer)/sqr_l)+1
-                    if active_piece and active_piece.can_move(chessboard, click_x, click_y)\
+                    if active_piece and active_piece.can_move(chessboard, click_x, click_y, king[1-white_turn])\
                             and ((active_piece.owner == 1) != white_turn):
                         chessboard[click_x][click_y] = active_piece
                         chessboard[active_piece.col][active_piece.row] = None
@@ -64,10 +66,32 @@ def main():
                         active_piece.has_moved = True
                         active_piece = None
                         white_turn = not white_turn
+                        if king[1-white_turn].in_check(chessboard):
+                            player_in_check[1-white_turn] = True
+                            print('CHECK!')
                     else:
                         active_piece = chessboard[click_x][click_y]
                 else:
                     active_piece = None
+
+        i = 1
+        j = 1
+        legal_moves = 0
+        while legal_moves == 0 and i < 9:
+            if j > 8:
+                j = 1
+                i += 1
+            if i < 9 and chessboard[i][j]\
+                    and ((chessboard[i][j].owner == 1) != white_turn):
+                legal_moves = chessboard[i][j].find_moves(chessboard, king[1-white_turn], drawing)
+            j += 1
+        if i == 9:
+            if player_in_check[1 - white_turn]:
+                print('CHECKMATE')
+                continue_game = False
+            else:
+                print('STALEMATE')
+                continue_game = False
 
         # starting with the background the chessboard is drawn along with the active piece paths
         chessboard_window.fill(rgb_black)
@@ -84,9 +108,9 @@ def main():
                     chessboard[i][j].display(chessboard_window, sqr_l,
                                              sqr_w_buffer, sqr_h_buffer)
         if active_piece:
-            active_piece.show_moves(chessboard, drawing)
+            active_piece.find_moves(chessboard, king[1-white_turn], drawing)
 
-        # after drawing the board it is updating to the screen and frames are updated
+        # after drawing the board it is updated to the screen and frames are updated
         pygame.display.update()
         clock.tick(100)
 

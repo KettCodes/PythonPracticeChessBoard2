@@ -1,6 +1,7 @@
 import os
 import pygame
 import GameFunctions
+import ChessCreateBoard
 
 # store RGB colour codes for pygame in tuples
 rgb_black = (0, 0, 0)
@@ -14,6 +15,7 @@ colour = [rgb_black, rgb_white, rgb_blue, rgb_red, rgb_green]
 
 class ChessPiece:
     def __init__(self, owner, row, col):
+        self.img = self.img
         self.has_moved = False
         self.pawn_en_pass = False
         self.owner = owner
@@ -25,8 +27,31 @@ class ChessPiece:
                           (GameFunctions.calc_x(self.col, sqr_l, sqr_w_buffer)+((sqr_l - 64) / 2),
                            GameFunctions.calc_y(self.row, sqr_l, sqr_h_buffer)+((sqr_l - 64) / 2)))
 
-    def show_moves(self, chessboard, d_tool):
-        pass
+    def find_moves(self, chessboard, my_king, d_tool):
+        count = 0
+        for i in range(-1, 2):
+            for j in range(-1, 2):
+                x = self.col+i
+                y = self.row+j
+                while self.can_move(chessboard, x, y, my_king) == 1:
+                    count += 1
+                    pygame.draw.ellipse(d_tool.screen,
+                                        rgb_blue,
+                                        (GameFunctions.calc_x(x, d_tool.sqr_l, d_tool.w_buffer),
+                                         GameFunctions.calc_y(y, d_tool.sqr_l, d_tool.h_buffer),
+                                         d_tool.sqr_l, d_tool.sqr_l),
+                                        4)
+                    x += i
+                    y += j
+                if self.can_move(chessboard, x, y, my_king) == 2:
+                    count += 1
+                    pygame.draw.ellipse(d_tool.screen,
+                                        rgb_red,
+                                        (GameFunctions.calc_x(x, d_tool.sqr_l, d_tool.w_buffer),
+                                         GameFunctions.calc_y(y, d_tool.sqr_l, d_tool.h_buffer),
+                                         d_tool.sqr_l, d_tool.sqr_l),
+                                        4)
+        return count
 
     def is_vert(self, to_x):
         if self.col == to_x:
@@ -75,15 +100,31 @@ class ChessPiece:
         y += y_dir
         while (x != to_x or y != to_y) and (0 < to_x < 9) and (0 < to_y < 9):
             if chessboard[x][y]:
-                print('blocked at ({}, {})'.format(x,y))
                 return False
             x += x_dir
             y += y_dir
         return True
 
     # for these functions 0 = no move, 1 = empty space, 2 = capture
-    def can_move(self, chessboard, to_x, to_y):
+    def can_move(self, chessboard, to_x, to_y, my_king):
         pass
+
+    def self_check(self, chessboard, to_x, to_y, my_king):
+        check = False
+        save_x = self.col
+        save_y = self.row
+        self.col = to_x
+        self.row = to_y
+        save_capture = chessboard[to_x][to_y]
+        chessboard[save_x][save_y] = None
+        chessboard[to_x][to_y] = self
+        if my_king.in_check(chessboard):
+            check = True
+        self.col = save_x
+        self.row = save_y
+        chessboard[save_x][save_y] = self
+        chessboard[to_x][to_y] = save_capture
+        return check
 
 
 class Pawn(ChessPiece):
@@ -94,52 +135,61 @@ class Pawn(ChessPiece):
             self.img = pygame.image.load(os.path.abspath(os.path.join('.', 'sprites\Pawn2.png')))
         super().__init__(owner, row, col)
 
-    def show_moves(self, chessboard, d_tool):
-        if self.can_move(chessboard, self.col, self.row + self.owner) == 1:
+    def find_moves(self, chessboard, my_king, d_tool):
+        count = 0
+        if self.can_move(chessboard, self.col, self.row + self.owner, my_king) == 1:
+            count += 1
             pygame.draw.ellipse(d_tool.screen,
                                 rgb_blue,
                                 (GameFunctions.calc_x(self.col, d_tool.sqr_l, d_tool.w_buffer),
                                  GameFunctions.calc_y(self.row + self.owner, d_tool.sqr_l, d_tool.h_buffer),
                                  d_tool.sqr_l, d_tool.sqr_l),
                                 4)
-            if self.can_move(chessboard, self.col, self.row + (2*self.owner)) == 1:
+            if self.can_move(chessboard, self.col, self.row + (2*self.owner), my_king) == 1:
+                count += 1
                 pygame.draw.ellipse(d_tool.screen,
                                     rgb_blue,
                                     (GameFunctions.calc_x(self.col, d_tool.sqr_l, d_tool.w_buffer),
                                      GameFunctions.calc_y(self.row + (2*self.owner), d_tool.sqr_l, d_tool.h_buffer),
                                      d_tool.sqr_l, d_tool.sqr_l),
                                     4)
-        if self.can_move(chessboard, self.col-1, self.row + self.owner) == 2:
+        if self.can_move(chessboard, self.col-1, self.row + self.owner, my_king) == 2:
+            count += 1
             pygame.draw.ellipse(d_tool.screen,
                                 rgb_red,
                                 (GameFunctions.calc_x(self.col-1, d_tool.sqr_l, d_tool.w_buffer),
                                  GameFunctions.calc_y(self.row + self.owner, d_tool.sqr_l, d_tool.h_buffer),
                                  d_tool.sqr_l, d_tool.sqr_l),
                                 4)
-        if self.can_move(chessboard, self.col+1, self.row + self.owner) == 2:
+        if self.can_move(chessboard, self.col+1, self.row + self.owner, my_king) == 2:
+            count += 1
             pygame.draw.ellipse(d_tool.screen,
                                 rgb_red,
                                 (GameFunctions.calc_x(self.col+1, d_tool.sqr_l, d_tool.w_buffer),
                                  GameFunctions.calc_y(self.row + self.owner, d_tool.sqr_l, d_tool.h_buffer),
                                  d_tool.sqr_l, d_tool.sqr_l),
                                 4)
+        return count
 
-    def can_move(self, chessboard, to_x, to_y):
+    def can_move(self, chessboard, to_x, to_y, my_king):
         if (0 < to_x < 9) and (0 < to_y < 9):
             if self.is_forward(to_y):
                 if self.is_vert(to_x):
                     if not chessboard[to_x][to_y]:
                         if self.vert_distance(to_y) == 1:
-                            return 1
+                            if not self.self_check(chessboard, to_x, to_y, my_king):
+                                return 1
                         elif (self.vert_distance(to_y) == 2)\
                                 and not chessboard[to_x][to_y-self.owner]\
                                 and not self.has_moved:
-                            return 1
+                            if not self.self_check(chessboard, to_x, to_y, my_king):
+                                return 1
                 elif (self.horiz_distance(to_x) == 1)\
                         and (self.vert_distance(to_y) == 1):
                     if chessboard[to_x][to_y]\
                             and self.is_enemy(chessboard, to_x, to_y):
-                        return 2
+                        if not self.self_check(chessboard, to_x, to_y, my_king):
+                            return 2
         return 0
 
 
@@ -151,34 +201,40 @@ class Knight(ChessPiece):
             self.img = pygame.image.load(os.path.abspath(os.path.join('.', 'sprites\Knight2.png')))
         super().__init__(owner, row, col)
 
-    def show_moves(self, chessboard, d_tool):
+    def find_moves(self, chessboard, my_king, d_tool):
+        count = 0
         for i in range(-2, 3):
-            check = self.can_move(chessboard, self.col+i, self.row-(3-abs(i)))
+            check = self.can_move(chessboard, self.col+i, self.row-(3-abs(i)), my_king)
             if check > 0:
+                count += 1
                 pygame.draw.ellipse(d_tool.screen,
                                     colour[check+1],
                                     (GameFunctions.calc_x(self.col + i, d_tool.sqr_l, d_tool.w_buffer),
                                      GameFunctions.calc_y(self.row - (3-abs(i)), d_tool.sqr_l, d_tool.h_buffer),
                                      d_tool.sqr_l, d_tool.sqr_l),
                                     4)
-            check = self.can_move(chessboard, self.col+i, self.row+(3-abs(i)))
+            check = self.can_move(chessboard, self.col+i, self.row+(3-abs(i)), my_king)
             if check > 0:
+                count += 1
                 pygame.draw.ellipse(d_tool.screen,
                                     colour[check+1],
                                     (GameFunctions.calc_x(self.col + i, d_tool.sqr_l, d_tool.w_buffer),
                                      GameFunctions.calc_y(self.row + (3-abs(i)), d_tool.sqr_l, d_tool.h_buffer),
                                      d_tool.sqr_l, d_tool.sqr_l),
                                     4)
+        return count
 
-    def can_move(self, chessboard, to_x, to_y):
+    def can_move(self, chessboard, to_x, to_y, my_king):
         if (0 < to_x < 9) and (0 < to_y < 9):
             if (self.vert_distance(to_y) > 0)\
                     and (self.horiz_distance(to_x) > 0)\
                     and (self.vert_distance(to_y)+self.horiz_distance(to_x) == 3):
                 if not chessboard[to_x][to_y]:
-                    return 1
+                    if not self.self_check(chessboard, to_x, to_y, my_king):
+                            return 1
                 if self.is_enemy(chessboard, to_x, to_y):
-                    return 2
+                    if not self.self_check(chessboard, to_x, to_y, my_king):
+                            return 2
 
         return 0
 
@@ -191,36 +247,16 @@ class Bishop(ChessPiece):
             self.img = pygame.image.load(os.path.abspath(os.path.join('.', 'sprites\Bishop2.png')))
         super().__init__(owner, row, col)
 
-    def show_moves(self, chessboard, d_tool):
-        for i in range(-1,2):
-            for j in range(-1,2):
-                x = self.col+i
-                y = self.row+j
-                while self.can_move(chessboard, x, y) == 1:
-                    pygame.draw.ellipse(d_tool.screen,
-                                        rgb_blue,
-                                        (GameFunctions.calc_x(x, d_tool.sqr_l, d_tool.w_buffer),
-                                         GameFunctions.calc_y(y, d_tool.sqr_l, d_tool.h_buffer),
-                                         d_tool.sqr_l, d_tool.sqr_l),
-                                        4)
-                    x += i
-                    y += j
-                if self.can_move(chessboard, x, y) == 2:
-                    pygame.draw.ellipse(d_tool.screen,
-                                        rgb_red,
-                                        (GameFunctions.calc_x(x, d_tool.sqr_l, d_tool.w_buffer),
-                                         GameFunctions.calc_y(y, d_tool.sqr_l, d_tool.h_buffer),
-                                         d_tool.sqr_l, d_tool.sqr_l),
-                                        4)
-
-    def can_move(self, chessboard, to_x, to_y):
+    def can_move(self, chessboard, to_x, to_y, my_king):
         if (0 < to_x < 9) and (0 < to_y < 9):
             if self.is_diagonal(to_x, to_y):
                 if self.open_between(chessboard, to_x, to_y):
                     if not chessboard[to_x][to_y]:
-                        return 1
+                        if not self.self_check(chessboard, to_x, to_y, my_king):
+                            return 1
                     elif self.is_enemy(chessboard, to_x, to_y):
-                        return 2
+                        if not self.self_check(chessboard, to_x, to_y, my_king):
+                            return 2
         return 0
 
 
@@ -232,36 +268,16 @@ class Rook(ChessPiece):
             self.img = pygame.image.load(os.path.abspath(os.path.join('.', 'sprites\Rook2.png')))
         super().__init__(owner, row, col)
 
-    def show_moves(self, chessboard, d_tool):
-        for i in range(-1, 2):
-            for j in range(-1, 2):
-                x = self.col+i
-                y = self.row+j
-                while self.can_move(chessboard, x, y) == 1:
-                    pygame.draw.ellipse(d_tool.screen,
-                                        rgb_blue,
-                                        (GameFunctions.calc_x(x, d_tool.sqr_l, d_tool.w_buffer),
-                                         GameFunctions.calc_y(y, d_tool.sqr_l, d_tool.h_buffer),
-                                         d_tool.sqr_l, d_tool.sqr_l),
-                                        4)
-                    x += i
-                    y += j
-                if self.can_move(chessboard, x, y) == 2:
-                    pygame.draw.ellipse(d_tool.screen,
-                                        rgb_red,
-                                        (GameFunctions.calc_x(x, d_tool.sqr_l, d_tool.w_buffer),
-                                         GameFunctions.calc_y(y, d_tool.sqr_l, d_tool.h_buffer),
-                                         d_tool.sqr_l, d_tool.sqr_l),
-                                        4)
-
-    def can_move(self, chessboard, to_x, to_y):
+    def can_move(self, chessboard, to_x, to_y, my_king):
         if (0 < to_x < 9) and (0 < to_y < 9):
             if self.is_horiz(to_y) or self.is_vert(to_x):
                 if self.open_between(chessboard, to_x, to_y):
                     if not chessboard[to_x][to_y]:
-                        return 1
+                        if not self.self_check(chessboard, to_x, to_y, my_king):
+                            return 1
                     elif self.is_enemy(chessboard, to_x, to_y):
-                        return 2
+                        if not self.self_check(chessboard, to_x, to_y, my_king):
+                            return 2
         return 0
 
 
@@ -273,36 +289,16 @@ class Queen(ChessPiece):
             self.img = pygame.image.load(os.path.abspath(os.path.join('.', 'sprites\Queen2.png')))
         super().__init__(owner, row, col)
 
-    def show_moves(self, chessboard, d_tool):
-        for i in range(-1, 2):
-            for j in range(-1, 2):
-                x = self.col+i
-                y = self.row+j
-                while self.can_move(chessboard, x, y) == 1:
-                    pygame.draw.ellipse(d_tool.screen,
-                                        rgb_blue,
-                                        (GameFunctions.calc_x(x, d_tool.sqr_l, d_tool.w_buffer),
-                                         GameFunctions.calc_y(y, d_tool.sqr_l, d_tool.h_buffer),
-                                         d_tool.sqr_l, d_tool.sqr_l),
-                                        4)
-                    x += i
-                    y += j
-                if self.can_move(chessboard, x, y) == 2:
-                    pygame.draw.ellipse(d_tool.screen,
-                                        rgb_red,
-                                        (GameFunctions.calc_x(x, d_tool.sqr_l, d_tool.w_buffer),
-                                         GameFunctions.calc_y(y, d_tool.sqr_l, d_tool.h_buffer),
-                                         d_tool.sqr_l, d_tool.sqr_l),
-                                        4)
-
-    def can_move(self, chessboard, to_x, to_y):
+    def can_move(self, chessboard, to_x, to_y, my_king):
         if (0 < to_x < 9) and (0 < to_y < 9):
             if self.is_horiz(to_y) or self.is_vert(to_x) or self.is_diagonal(to_x, to_y):
                 if self.open_between(chessboard, to_x, to_y):
                     if not chessboard[to_x][to_y]:
-                        return 1
+                        if not self.self_check(chessboard, to_x, to_y, my_king):
+                            return 1
                     elif self.is_enemy(chessboard, to_x, to_y):
-                        return 2
+                        if not self.self_check(chessboard, to_x, to_y, my_king):
+                            return 2
         return 0
 
 
@@ -315,35 +311,60 @@ class King(ChessPiece):
             self.img = pygame.image.load(os.path.abspath(os.path.join('.', 'sprites\King2.png')))
         super().__init__(owner, row, col)
 
-    def show_moves(self, chessboard, d_tool):
-        for i in range(-1, 2):
-            for j in range(-1, 2):
-                x = self.col+i
-                y = self.row+j
-                while self.can_move(chessboard, x, y) == 1:
-                    pygame.draw.ellipse(d_tool.screen,
-                                        rgb_blue,
-                                        (GameFunctions.calc_x(x, d_tool.sqr_l, d_tool.w_buffer),
-                                         GameFunctions.calc_y(y, d_tool.sqr_l, d_tool.h_buffer),
-                                         d_tool.sqr_l, d_tool.sqr_l),
-                                        4)
-                    x += i
-                    y += j
-                if self.can_move(chessboard, x, y) == 2:
-                    pygame.draw.ellipse(d_tool.screen,
-                                        rgb_red,
-                                        (GameFunctions.calc_x(x, d_tool.sqr_l, d_tool.w_buffer),
-                                         GameFunctions.calc_y(y, d_tool.sqr_l, d_tool.h_buffer),
-                                         d_tool.sqr_l, d_tool.sqr_l),
-                                        4)
-
-    def can_move(self, chessboard, to_x, to_y):
+    def can_move(self, chessboard, to_x, to_y, my_king):
         if (0 < to_x < 9) and (0 < to_y < 9):
             if (self.horiz_distance(to_x) < 2)\
                     and (self.vert_distance(to_y) < 2)\
                     and (self.horiz_distance(to_x) + self.vert_distance(to_y)):
                 if not chessboard[to_x][to_y]:
-                    return 1
+                    if not self.self_check(chessboard, to_x, to_y, my_king):
+                        return 1
                 elif self.is_enemy(chessboard, to_x, to_y):
-                    return 2
+                    if not self.self_check(chessboard, to_x, to_y, my_king):
+                        return 2
         return 0
+
+    def in_check(self, chessboard):
+        # check non-knight pieces
+        for i in range(-1, 2):
+            for j in range(-1, 2):
+                x = self.col+i
+                y = self.row+j
+
+                while (0 < x < 9) and (0 < y < 9)\
+                        and not chessboard[x][y]:
+                    x += i
+                    y += j
+                if (0 < x < 9) and (0 < y < 9):
+                    if self.is_enemy(chessboard, x, y):
+                        if i == 0 or j == 0:
+                            if chessboard[x][y].__class__.__name__ == 'Queen'\
+                                    or chessboard[x][y].__class__.__name__ == 'Rook':
+                                return True
+                            elif chessboard[x][y].__class__.__name__ == 'King'\
+                                    and self.horiz_distance(x) < 2 and self.vert_distance(y) < 2:
+                                return True
+                        elif chessboard[x][y].__class__.__name__ == 'Queen'\
+                                or chessboard[x][y].__class__.__name__ == 'Bishop':
+                            return True
+                        elif self.horiz_distance(x) < 2 and self.vert_distance(y) < 2:
+                            if chessboard[x][y].__class__.__name__ == 'King':
+                                return True
+                            elif self.is_forward(y) and chessboard[x][y].__class__.__name__ == 'Pawn':
+                                return True
+        # check knight pieces
+        for k in range(-2, 3):
+            x = self.col+k
+            y = self.row+(3-abs(k))
+            z = self.row-(3-abs(k))
+            if k != 0:
+                if (0 < x < 9) and (0 < y < 9):
+                    if chessboard[x][y] and self.is_enemy(chessboard, x, y)\
+                            and chessboard[x][y].__class__.__name__ == 'Knight':
+                                return True
+                if (0 < x < 9) and (0 < z < 9):
+                    if chessboard[x][z] and self.is_enemy(chessboard, x, z)\
+                            and chessboard[x][z].__class__.__name__ == 'Knight':
+                                return True
+        return False
+
