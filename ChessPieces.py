@@ -17,7 +17,7 @@ class ChessPiece:
     def __init__(self, owner, row, col):
         self.img = self.img
         self.has_moved = False
-        self.pawn_en_pass = False
+        self.en_pass = False
         self.owner = owner
         self.row = row
         self.col = col
@@ -111,6 +111,8 @@ class ChessPiece:
 
     def self_check(self, chessboard, to_x, to_y, my_king):
         check = False
+        to_x = int(to_x)
+        to_y = int(to_y)
         save_x = self.col
         save_y = self.row
         self.col = to_x
@@ -190,6 +192,14 @@ class Pawn(ChessPiece):
                             and self.is_enemy(chessboard, to_x, to_y):
                         if not self.self_check(chessboard, to_x, to_y, my_king):
                             return 2
+                    elif not chessboard[to_x][to_y] \
+                            and chessboard[to_x][self.row] and chessboard[to_x][self.row].en_pass:
+                        temp = chessboard[to_x][self.row]
+                        chessboard[to_x][self.row] = None
+                        if not self.self_check(chessboard, to_x, to_y, my_king):
+                            chessboard[to_x][self.row] = temp
+                            return 2
+                        chessboard[to_x][self.row] = temp
         return 0
 
 
@@ -322,6 +332,20 @@ class King(ChessPiece):
                 elif self.is_enemy(chessboard, to_x, to_y):
                     if not self.self_check(chessboard, to_x, to_y, my_king):
                         return 2
+            if not self.has_moved and self.vert_distance(to_y) == 0\
+                    and self.horiz_distance(to_x) == 2:
+                x_change = (to_x - self.col)/2
+                new_x = self.col
+                for i in range(3):
+                    if self.self_check(chessboard, new_x, to_y, my_king):
+                        return 0
+                    new_x += x_change
+                while 1 < new_x < 8:
+                    new_x += x_change
+                new_x = int(new_x)
+                if self.open_between(chessboard, new_x, to_y)\
+                        and chessboard[new_x][to_y] and not chessboard[new_x][to_y].has_moved:
+                    return 1
         return 0
 
     def in_check(self, chessboard):
